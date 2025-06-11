@@ -33,5 +33,21 @@ class AuthTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertIn(b"Token missing", response.data)
 
+    def test_login_invalid(self):
+        # Register user first
+        self.client.post('/register', json={
+            "email": "test3@example.com",
+            "password": "password123"
+        })
+        # Attempt to login with wrong password
+        response = self.client.post('/login', json={
+            "email": "test3@example.com",
+            "password": "wrongpassword"
+        })
+        self.assertEqual(response.status_code, 401)
+        self.assertIn(b"Invalid credentials", response.data)
+
+
+
 if __name__ == '__main__':
     unittest.main()
