@@ -5,6 +5,7 @@ class User:
         self.hashed_password = hashed_password
         self.is_verified = False
         self.verification_token = str(uuid.uuid4())
+        self.reset_token = None 
 
     def to_dict(self):
         return {

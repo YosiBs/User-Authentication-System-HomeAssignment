@@ -6,7 +6,8 @@ from .config import SECRET_KEY, JWT_ALGORITHM
 from .models import User
 
 from .utils.limiter import limiter
-from .utils.email_util import send_verification_email
+from .utils.email_util import send_verification_email, send_reset_email
+import uuid
 
 auth_routes = Blueprint('auth', __name__)
 
@@ -115,3 +116,49 @@ def verify_email():
             </body>
         </html>
     """, mimetype='text/html'), 400
+
+
+
+#----------------------------------------------------------------------------------------------------------Reset Password [POST]
+@auth_routes.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.json
+    email = data.get('email')
+    user = users.get(email)
+
+    if not user:
+        return jsonify({"error": "Email not found"}), 404
+
+    user.reset_token = str(uuid.uuid4())
+    send_reset_email(email, user.reset_token)
+
+    return jsonify({"message": "Password reset link sent to your email"})
+
+
+#----------------------------------------------------------------------------------------------------------Reset Password [GET]
+@auth_routes.route('/reset', methods=['GET'])
+def reset_form():
+    token = request.args.get('token')
+    return Response(f"""
+    <html><body style="text-align:center; margin-top:100px;">
+        <form action="/reset" method="POST">
+            <input type="hidden" name="token" value="{token}" />
+            <input type="password" name="new_password" placeholder="New Password" required />
+            <button type="submit">Reset Password</button>
+        </form>
+    </body></html>
+    """, mimetype='text/html')
+
+#----------------------------------------------------------------------------------------------------------Reset Password [GET]
+@auth_routes.route('/reset', methods=['POST'])
+def reset_password():
+    token = request.form.get('token')
+    new_password = request.form.get('new_password')
+
+    for user in users.values():
+        if user.reset_token == token:
+            user.hashed_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt())
+            user.reset_token = None
+            return Response("<h2 style='text-align:center;'>Password reset successful!</h2>", mimetype='text/html')
+    
+    return Response("<h2 style='text-align:center; color:red;'>Invalid or expired reset link</h2>", mimetype='text/html'), 400
