@@ -5,6 +5,9 @@ import datetime
 from .config import SECRET_KEY, JWT_ALGORITHM
 from .models import User
 
+from .utils.limiter import limiter
+
+
 auth_routes = Blueprint('auth', __name__)
 
 # Temporary in-memory user store
@@ -26,8 +29,13 @@ def register():
     user = User(email, hashed_pw)
     users[email] = user
     return jsonify({"message": "User registered successfully!"})
+
+
+
+
 #----------------------------------------------------------------------------------------------------------login [POST]
 @auth_routes.route('/login', methods=['POST'])
+@limiter.limit("3 per minute")
 def login():
     data = request.json
     email = data.get('email')
@@ -35,7 +43,7 @@ def login():
     
     user = users.get(email)
     if not user or not bcrypt.checkpw(password.encode(), user.hashed_password):
-      return jsonify({"error": "Invalid credentials"}), 401
+        return jsonify({"error": "Invalid credentials"}), 401
 
     token = jwt.encode(
         {
@@ -47,6 +55,10 @@ def login():
     )
 
     return jsonify({"token": token})
+
+
+
+
 #----------------------------------------------------------------------------------------------------------Dashboard [GET]
 @auth_routes.route('/dashboard', methods=['GET'])
 def dashboard():

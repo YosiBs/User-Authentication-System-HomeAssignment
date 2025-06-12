@@ -2,8 +2,12 @@ document.getElementById("homeBtn").addEventListener("click", () => {
   window.location.href = "../index.html";
 });
 
+console.log("Dashboard localStorage: ", localStorage.getItem("token"));
+console.log("Dashboard sessionStorage: ", sessionStorage.getItem("token"));
+
 document.addEventListener("DOMContentLoaded", async () => {
-  const token = localStorage.getItem("token");
+  const token =
+    localStorage.getItem("token") || sessionStorage.getItem("token");
   if (!token) {
     alert("You need to login first!");
     window.location.href = "login.html";
@@ -30,5 +34,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 document.getElementById("logoutBtn").addEventListener("click", () => {
   localStorage.removeItem("token");
+  sessionStorage.removeItem("token");
   window.location.href = "../index.html";
 });

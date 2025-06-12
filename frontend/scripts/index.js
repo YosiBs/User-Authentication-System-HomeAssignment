@@ -1,5 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const token = localStorage.getItem("token");
+  const token =
+    localStorage.getItem("token") || sessionStorage.getItem("token");
+
+  console.log("home localStorage: ", localStorage.getItem("token"));
+  console.log("home sessionStorage: ", sessionStorage.getItem("token"));
 
   if (token) {
     // Disable Login and Register buttons

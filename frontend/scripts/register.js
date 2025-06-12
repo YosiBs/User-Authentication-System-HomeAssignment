@@ -2,6 +2,9 @@ document.getElementById("homeBtn").addEventListener("click", () => {
   window.location.href = "../index.html";
 });
 
+console.log("register localStorage: ", localStorage.getItem("token"));
+console.log("register sessionStorage: ", sessionStorage.getItem("token"));
+
 document
   .getElementById("registerForm")
   .addEventListener("submit", async (e) => {
@@ -13,8 +16,9 @@ document
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,12}$/;
     if (!passwordRegex.test(password)) {
-      document.getElementById("error").textContent =
-        "Password must have 1 uppercase, 1 lowercase, 1 number, and be 8-12 characters long.";
+      alert(
+        "Password must have:\n 1 uppercase letter\n 1 lowercase letter\n 1 number\n 8–12 characters long"
+      );
       return;
     }
 
