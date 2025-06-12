@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 import bcrypt
 import jwt
 import datetime
@@ -6,7 +6,7 @@ from .config import SECRET_KEY, JWT_ALGORITHM
 from .models import User
 
 from .utils.limiter import limiter
-
+from .utils.email_util import send_verification_email
 
 auth_routes = Blueprint('auth', __name__)
 
@@ -28,6 +28,9 @@ def register():
     hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
     user = User(email, hashed_pw)
     users[email] = user
+
+    send_verification_email(email, user.verification_token)
+
     return jsonify({"message": "User registered successfully!"})
 
 
@@ -45,6 +48,9 @@ def login():
     if not user or not bcrypt.checkpw(password.encode(), user.hashed_password):
         return jsonify({"error": "Invalid credentials"}), 401
 
+    if not user.is_verified:
+        return jsonify({"error": "Email not verified. Check your inbox."}), 403
+    
     token = jwt.encode(
         {
             "email": email,
@@ -82,3 +88,30 @@ def dashboard():
         "message": f"Welcome {user.email}!",
         "user": user.to_dict()
     })
+
+
+#----------------------------------------------------------------------------------------------------------Email Verification [GET]
+@auth_routes.route('/verify', methods=['GET'])
+def verify_email():
+    token = request.args.get('token')
+    for user in users.values():
+        if user.verification_token == token:
+            user.is_verified = True
+            return Response("""
+                <html>
+                    <head><title>Verified</title></head>
+                    <body style="text-align: center; margin-top: 100px; font-family: Arial, sans-serif;">
+                        <h1 style="color: green;">Email Verified Successfully ✅</h1>
+                        <p>You can close this window.</p>
+                    </body>
+                </html>
+            """, mimetype='text/html')
+    return Response("""
+        <html>
+            <head><title>Invalid Link</title></head>
+            <body style="text-align: center; margin-top: 100px; font-family: Arial, sans-serif;">
+                <h1 style="color: red;">Invalid or Expired Verification Link ❌</h1>
+                <p>You can close this window.</p>
+            </body>
+        </html>
+    """, mimetype='text/html'), 400

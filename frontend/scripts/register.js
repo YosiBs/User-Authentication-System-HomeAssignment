@@ -38,8 +38,8 @@ document
     const data = await response.json();
 
     if (response.ok) {
-      alert("Registration successful! Please login.");
-      window.location.href = "login.html";
+      alert("Registration successful! Please go to your email and verify.");
+      window.location.href = "../index.html";
     } else {
       document.getElementById("error").textContent =
         data.error || "Registration failed.";

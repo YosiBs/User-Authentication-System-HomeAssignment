@@ -1,10 +1,13 @@
+import uuid
 class User:
     def __init__(self, email, hashed_password):
         self.email = email
         self.hashed_password = hashed_password
+        self.is_verified = False
+        self.verification_token = str(uuid.uuid4())
 
     def to_dict(self):
         return {
-            "email": self.email
-            # Add more fields here in future (like name, created_at)
+            "email": self.email,
+            "is_verified": self.is_verified
         }
