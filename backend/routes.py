@@ -18,6 +18,7 @@ users = {}
 def register():
     data = request.json
     email = data.get('email')
+    name = data.get('name', "")
     password = data.get('password')
 
     if not email or not password:
@@ -27,7 +28,7 @@ def register():
         return jsonify({"error": "User already exists"}), 409
 
     hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-    user = User(email, hashed_pw)
+    user = User(email, hashed_pw, name)
     users[email] = user
 
     send_verification_email(email, user.verification_token)
@@ -149,7 +150,7 @@ def reset_form():
     </body></html>
     """, mimetype='text/html')
 
-#----------------------------------------------------------------------------------------------------------Reset Password [GET]
+#----------------------------------------------------------------------------------------------------------Reset Password [POST]
 @auth_routes.route('/reset', methods=['POST'])
 def reset_password():
     token = request.form.get('token')
@@ -162,3 +163,25 @@ def reset_password():
             return Response("<h2 style='text-align:center;'>Password reset successful!</h2>", mimetype='text/html')
     
     return Response("<h2 style='text-align:center; color:red;'>Invalid or expired reset link</h2>", mimetype='text/html'), 400
+
+
+#----------------------------------------------------------------------------------------------------------Update Profile (name) [PUT]
+@auth_routes.route('/update-profile', methods=['PUT'])
+def update_profile():
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({"error": "Missing token"}), 401
+
+    try:
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        email = decoded.get("email")
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Invalid token"}), 401
+
+    user = users.get(email)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    data = request.json
+    user.name = data.get('name', user.name)
+    return jsonify({"message": "Profile updated", "user": user.to_dict()})
