@@ -18,12 +18,17 @@ class AuthTestCase(unittest.TestCase):
         # First, register the user
         self.client.post('/register', json={
             "email": "test2@example.com",
-            "password": "test123"
+            "password": "Aa123456"
         })
+
+        # Manually verify the user
+        from backend.routes import users
+        users["test2@example.com"].is_verified = True
+
         # Then, try to login
         response = self.client.post('/login', json={
             "email": "test2@example.com",
-            "password": "test123"
+            "password": "Aa123456"
         })
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"token", response.data)
