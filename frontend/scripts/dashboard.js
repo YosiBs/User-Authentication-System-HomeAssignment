@@ -1,20 +1,26 @@
+import {
+  TOKEN_KEY,
+  DASHBOARD_ENDPOINT,
+  UPDATE_PROFILE_ENDPOINT,
+} from "../contstants.js";
+
 document.getElementById("homeBtn").addEventListener("click", () => {
   window.location.href = "../index.html";
 });
 
-console.log("Dashboard localStorage: ", localStorage.getItem("token"));
-console.log("Dashboard sessionStorage: ", sessionStorage.getItem("token"));
+console.log("Dashboard localStorage: ", localStorage.getItem(TOKEN_KEY));
+console.log("Dashboard sessionStorage: ", sessionStorage.getItem(TOKEN_KEY));
 
 document.addEventListener("DOMContentLoaded", async () => {
   const token =
-    localStorage.getItem("token") || sessionStorage.getItem("token");
+    localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
   if (!token) {
     alert("You need to login first!");
     window.location.href = "login.html";
     return;
   }
 
-  const response = await fetch("http://127.0.0.1:5000/dashboard", {
+  const response = await fetch(DASHBOARD_ENDPOINT, {
     method: "GET",
     headers: {
       Authorization: token,
@@ -30,14 +36,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("nameInput").value = name;
   } else {
     alert("Session expired. Please login again.");
-    localStorage.removeItem("token");
+    localStorage.removeItem(TOKEN_KEY);
     window.location.href = "login.html";
   }
 });
 //Log out button fanctionality
 document.getElementById("logoutBtn").addEventListener("click", () => {
-  localStorage.removeItem("token");
-  sessionStorage.removeItem("token");
+  localStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
   window.location.href = "../index.html";
 });
 
@@ -45,9 +51,9 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
 document.getElementById("changeNameBtn").addEventListener("click", async () => {
   const newName = document.getElementById("nameInput").value;
   const token =
-    localStorage.getItem("token") || sessionStorage.getItem("token");
+    localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
 
-  const res = await fetch("http://127.0.0.1:5000/update-profile", {
+  const res = await fetch(UPDATE_PROFILE_ENDPOINT, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -58,7 +64,7 @@ document.getElementById("changeNameBtn").addEventListener("click", async () => {
 
   const data = await res.json();
   if (res.ok) {
-    alert("Name updated!");
+    alert("Name updated!, Please refresh");
     document.getElementById(
       "greeting"
     ).textContent = `Welcome, ${data.user.name}`;

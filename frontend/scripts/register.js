@@ -1,9 +1,11 @@
+import { TOKEN_KEY, REGISTER_ENDPOINT } from "../contstants.js";
+
 document.getElementById("homeBtn").addEventListener("click", () => {
   window.location.href = "../index.html";
 });
 
-console.log("register localStorage: ", localStorage.getItem("token"));
-console.log("register sessionStorage: ", sessionStorage.getItem("token"));
+console.log("register localStorage: ", localStorage.getItem(TOKEN_KEY));
+console.log("register sessionStorage: ", sessionStorage.getItem(TOKEN_KEY));
 
 document
   .getElementById("registerForm")
@@ -28,7 +30,7 @@ document
       return;
     }
 
-    const response = await fetch("http://127.0.0.1:5000/register", {
+    const response = await fetch(REGISTER_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

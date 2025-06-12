@@ -1,9 +1,11 @@
+import { TOKEN_KEY, LOGIN_ENDPOINT } from "../contstants.js";
+
 document.getElementById("homeBtn").addEventListener("click", () => {
   window.location.href = "../index.html";
 });
 
-console.log("login localStorage: ", localStorage.getItem("token"));
-console.log("login sessionStorage: ", sessionStorage.getItem("token"));
+console.log("login localStorage: ", localStorage.getItem(TOKEN_KEY));
+console.log("login sessionStorage: ", sessionStorage.getItem(TOKEN_KEY));
 
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -12,7 +14,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   const password = document.getElementById("password").value;
   const rememberMe = document.getElementById("rememberMe").checked;
 
-  const response = await fetch("http://127.0.0.1:5000/login", {
+  const response = await fetch(LOGIN_ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -28,9 +30,9 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
   }
   if (response.ok) {
     if (rememberMe) {
-      localStorage.setItem("token", data.token);
+      localStorage.setItem(TOKEN_KEY, data.token);
     } else {
-      sessionStorage.setItem("token", data.token);
+      sessionStorage.setItem(TOKEN_KEY, data.token);
     }
     window.location.href = "dashboard.html";
   } else {

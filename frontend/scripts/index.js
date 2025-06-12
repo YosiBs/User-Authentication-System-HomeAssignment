@@ -1,9 +1,10 @@
+import { TOKEN_KEY } from "../contstants.js";
 document.addEventListener("DOMContentLoaded", () => {
   const token =
-    localStorage.getItem("token") || sessionStorage.getItem("token");
+    localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
 
-  console.log("home localStorage: ", localStorage.getItem("token"));
-  console.log("home sessionStorage: ", sessionStorage.getItem("token"));
+  console.log("home localStorage: ", localStorage.getItem(TOKEN_KEY));
+  console.log("home sessionStorage: ", sessionStorage.getItem(TOKEN_KEY));
 
   if (token) {
     // Disable Login and Register buttons
@@ -19,12 +20,12 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 document.getElementById("loginBtn").addEventListener("click", () => {
-  if (!localStorage.getItem("token")) {
+  if (!localStorage.getItem(TOKEN_KEY)) {
     window.location.href = "pages/login.html";
   }
 });
 document.getElementById("registerBtn").addEventListener("click", () => {
-  if (!localStorage.getItem("token")) {
+  if (!localStorage.getItem(TOKEN_KEY)) {
     window.location.href = "pages/register.html";
   }
 });

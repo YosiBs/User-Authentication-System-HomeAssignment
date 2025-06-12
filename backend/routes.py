@@ -2,9 +2,9 @@ from flask import Blueprint, request, jsonify, Response
 import bcrypt
 import jwt
 import datetime
-from .config import SECRET_KEY, JWT_ALGORITHM
+from backend.utils.html_templates import INVALID_LINK_HTML, RESET_FORM_MAIL, VERIFIED_HTML
+from .config import JWT_EXPIRATION_HOURS, RATE_LIMIT_LOGIN, SECRET_KEY, JWT_ALGORITHM
 from .models import User
-
 from .utils.limiter import limiter
 from .utils.email_util import send_verification_email, send_reset_email
 import uuid
@@ -30,17 +30,12 @@ def register():
     hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
     user = User(email, hashed_pw, name)
     users[email] = user
-
     send_verification_email(email, user.verification_token)
-
     return jsonify({"message": "User registered successfully!"})
-
-
-
 
 #----------------------------------------------------------------------------------------------------------login [POST]
 @auth_routes.route('/login', methods=['POST'])
-@limiter.limit("3 per minute")
+@limiter.limit(RATE_LIMIT_LOGIN)
 def login():
     data = request.json
     email = data.get('email')
@@ -56,16 +51,13 @@ def login():
     token = jwt.encode(
         {
             "email": email,
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=JWT_EXPIRATION_HOURS)
         },
         SECRET_KEY,
         algorithm=JWT_ALGORITHM
     )
 
     return jsonify({"token": token})
-
-
-
 
 #----------------------------------------------------------------------------------------------------------Dashboard [GET]
 @auth_routes.route('/dashboard', methods=['GET'])
@@ -91,7 +83,6 @@ def dashboard():
         "user": user.to_dict()
     })
 
-
 #----------------------------------------------------------------------------------------------------------Email Verification [GET]
 @auth_routes.route('/verify', methods=['GET'])
 def verify_email():
@@ -99,26 +90,8 @@ def verify_email():
     for user in users.values():
         if user.verification_token == token:
             user.is_verified = True
-            return Response("""
-                <html>
-                    <head><title>Verified</title></head>
-                    <body style="text-align: center; margin-top: 100px; font-family: Arial, sans-serif;">
-                        <h1 style="color: green;">Email Verified Successfully ✅</h1>
-                        <p>You can close this window.</p>
-                    </body>
-                </html>
-            """, mimetype='text/html')
-    return Response("""
-        <html>
-            <head><title>Invalid Link</title></head>
-            <body style="text-align: center; margin-top: 100px; font-family: Arial, sans-serif;">
-                <h1 style="color: red;">Invalid or Expired Verification Link ❌</h1>
-                <p>You can close this window.</p>
-            </body>
-        </html>
-    """, mimetype='text/html'), 400
-
-
+            return Response(VERIFIED_HTML, mimetype='text/html')
+    return Response(INVALID_LINK_HTML, mimetype='text/html'), 400
 
 #----------------------------------------------------------------------------------------------------------Reset Password [POST]
 @auth_routes.route('/forgot-password', methods=['POST'])
@@ -135,20 +108,11 @@ def forgot_password():
 
     return jsonify({"message": "Password reset link sent to your email"})
 
-
 #----------------------------------------------------------------------------------------------------------Reset Password [GET]
 @auth_routes.route('/reset', methods=['GET'])
 def reset_form():
     token = request.args.get('token')
-    return Response(f"""
-    <html><body style="text-align:center; margin-top:100px;">
-        <form action="/reset" method="POST">
-            <input type="hidden" name="token" value="{token}" />
-            <input type="password" name="new_password" placeholder="New Password" required />
-            <button type="submit">Reset Password</button>
-        </form>
-    </body></html>
-    """, mimetype='text/html')
+    return Response(RESET_FORM_MAIL.format(token=token), mimetype='text/html')
 
 #----------------------------------------------------------------------------------------------------------Reset Password [POST]
 @auth_routes.route('/reset', methods=['POST'])
@@ -163,7 +127,6 @@ def reset_password():
             return Response("<h2 style='text-align:center;'>Password reset successful!</h2>", mimetype='text/html')
     
     return Response("<h2 style='text-align:center; color:red;'>Invalid or expired reset link</h2>", mimetype='text/html'), 400
-
 
 #----------------------------------------------------------------------------------------------------------Update Profile (name) [PUT]
 @auth_routes.route('/update-profile', methods=['PUT'])
