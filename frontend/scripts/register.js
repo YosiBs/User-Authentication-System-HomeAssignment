@@ -1,3 +1,5 @@
+console.log("loaded");
+
 import { TOKEN_KEY, REGISTER_ENDPOINT } from "../contstants.js";
 
 document.getElementById("homeBtn").addEventListener("click", () => {
@@ -37,8 +39,10 @@ document
       },
       body: JSON.stringify({ email, password, name }),
     });
+    console.log(response);
 
     const data = await response.json();
+    console.log(data);
 
     if (response.ok) {
       alert("Registration successful! Please go to your email and verify.");

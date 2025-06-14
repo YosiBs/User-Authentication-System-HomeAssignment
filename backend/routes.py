@@ -4,32 +4,35 @@ import jwt
 import datetime
 from backend.utils.html_templates import INVALID_LINK_HTML, RESET_FORM_MAIL, VERIFIED_HTML
 from .config import JWT_EXPIRATION_HOURS, RATE_LIMIT_LOGIN, SECRET_KEY, JWT_ALGORITHM
-from .models import User
+# from .models import User
 from .utils.limiter import limiter
 from .utils.email_util import send_verification_email, send_reset_email
 import uuid
+from backend.utils.extensions import db
+from .models import UserModel
+
 
 auth_routes = Blueprint('auth', __name__)
 
-# Temporary in-memory user store
-users = {}
 #----------------------------------------------------------------------------------------------------------register [POST]
 @auth_routes.route('/register', methods=['POST'])
 def register():
     data = request.json
-    email = data.get('email')
+    email = data.get('email',"").lower()
     name = data.get('name', "")
     password = data.get('password')
 
     if not email or not password:
         return jsonify({"error": "Email and password required"}), 400
 
-    if email in users:
+    if UserModel.query.filter_by(email=email).first():
         return jsonify({"error": "User already exists"}), 409
 
     hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-    user = User(email, hashed_pw, name)
-    users[email] = user
+    user = UserModel(email=email, hashed_password=hashed_pw, name=name)
+    db.session.add(user)
+    db.session.commit()
+
     send_verification_email(email, user.verification_token)
     return jsonify({"message": "User registered successfully!"})
 
@@ -38,10 +41,10 @@ def register():
 @limiter.limit(RATE_LIMIT_LOGIN)
 def login():
     data = request.json
-    email = data.get('email')
+    email = data.get('email',"").lower()
     password = data.get('password')
     
-    user = users.get(email)
+    user = UserModel.query.filter_by(email=email).first()
     if not user or not bcrypt.checkpw(password.encode(), user.hashed_password):
         return jsonify({"error": "Invalid credentials"}), 401
 
@@ -74,7 +77,7 @@ def dashboard():
     except jwt.InvalidTokenError:
         return jsonify({"error": "Invalid token"}), 401
 
-    user = users.get(email)
+    user = UserModel.query.filter_by(email=email).first()
     if not user:
         return jsonify({"error": "User not found"}), 404
 
@@ -87,10 +90,11 @@ def dashboard():
 @auth_routes.route('/verify', methods=['GET'])
 def verify_email():
     token = request.args.get('token')
-    for user in users.values():
-        if user.verification_token == token:
-            user.is_verified = True
-            return Response(VERIFIED_HTML, mimetype='text/html')
+    user = UserModel.query.filter_by(verification_token=token).first()
+    if user:
+        user.is_verified = True
+        db.session.commit()
+        return Response(VERIFIED_HTML, mimetype='text/html')
     return Response(INVALID_LINK_HTML, mimetype='text/html'), 400
 
 #----------------------------------------------------------------------------------------------------------Reset Password [POST]
@@ -98,12 +102,13 @@ def verify_email():
 def forgot_password():
     data = request.json
     email = data.get('email')
-    user = users.get(email)
+    user = UserModel.query.filter_by(email=email).first()
 
     if not user:
         return jsonify({"error": "Email not found"}), 404
 
     user.reset_token = str(uuid.uuid4())
+    db.session.commit()
     send_reset_email(email, user.reset_token)
 
     return jsonify({"message": "Password reset link sent to your email"})
@@ -120,12 +125,12 @@ def reset_password():
     token = request.form.get('token')
     new_password = request.form.get('new_password')
 
-    for user in users.values():
-        if user.reset_token == token:
-            user.hashed_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt())
-            user.reset_token = None
-            return Response("<h2 style='text-align:center;'>Password reset successful!</h2>", mimetype='text/html')
-    
+    user = UserModel.query.filter_by(reset_token=token).first()
+    if user:
+        user.hashed_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt())
+        user.reset_token = None
+        db.session.commit()
+        return Response("<h2 style='text-align:center;'>Password reset successful!</h2>", mimetype='text/html')
     return Response("<h2 style='text-align:center; color:red;'>Invalid or expired reset link</h2>", mimetype='text/html'), 400
 
 #----------------------------------------------------------------------------------------------------------Update Profile (name) [PUT]
@@ -141,10 +146,12 @@ def update_profile():
     except jwt.InvalidTokenError:
         return jsonify({"error": "Invalid token"}), 401
 
-    user = users.get(email)
+    user = UserModel.query.filter_by(email=email).first()
     if not user:
         return jsonify({"error": "User not found"}), 404
 
     data = request.json
     user.name = data.get('name', user.name)
+    db.session.commit()
+
     return jsonify({"message": "Profile updated", "user": user.to_dict()})
