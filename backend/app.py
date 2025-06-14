@@ -8,12 +8,12 @@ from backend.config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIO
 
 
 app = Flask(__name__)
-
+CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
 db.init_app(app)
 
-CORS(app)
+
 limiter.init_app(app)
 
 # Register the authentication routes
