@@ -1,9 +1,20 @@
 import unittest
 from backend.app import app
+from backend.utils.extensions import db
 
 class RegisterInputValidationTest(unittest.TestCase):
     def setUp(self):
+        app.config['TESTING'] = True
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
         self.client = app.test_client()
+
+        with app.app_context():
+            db.create_all()
+
+    def tearDown(self):
+        with app.app_context():
+            db.session.remove()
+            db.drop_all()
 
     def test_missing_email(self):
         response = self.client.post('/register', json={
