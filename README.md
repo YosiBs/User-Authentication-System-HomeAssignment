@@ -184,6 +184,8 @@ token=abc123&new_password=NewPass123
 
   <li>👤 <strong>User Roles</strong>: All users share the same permissions and functionality. There is no role-based access (e.g., admin vs. regular user).</li>
 
+  <li>🧪 <strong>Sanity Tests</strong>: Used Postman software for initial tests.</li>
+
   <li>🔐 <strong>JWT Secret Key</strong>: The JWT <code>SECRET_KEY</code> is hardcoded in <code>config.py</code> for simplicity. In a real deployment, this should be managed via environment variables.</li>
 
   <li>⏱️ <strong>Rate Limiting</strong>: The login endpoint is limited to 3 attempts per minute using Flask-Limiter. This setting is primarily for demo/testing purposes and can be adjusted.</li>
