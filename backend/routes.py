@@ -101,7 +101,7 @@ def verify_email():
 @auth_routes.route('/forgot-password', methods=['POST'])
 def forgot_password():
     data = request.json
-    email = data.get('email')
+    email = data.get('email',"").lower()
     user = UserModel.query.filter_by(email=email).first()
 
     if not user:
